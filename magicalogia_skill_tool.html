@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マギカロギア 特技判定ツール</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --bg2: #1a1a22;
+    --bg3: #22222e;
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.2);
+    --text: #e8e6f0;
+    --text2: #9994b0;
+    --text3: #5a5670;
+    --purple: #7c6ee8;
+    --purple-bg: #2a2348;
+    --purple-text: #c4bef8;
+    --blue: #4a8fd4;
+    --blue-bg: #1a2e48;
+    --blue-text: #a8ccf0;
+    --green: #4a9e6a;
+    --green-bg: #1a3028;
+    --green-text: #8ed4aa;
+    --amber: #c4882a;
+    --amber-bg: #362010;
+    --amber-text: #f0c070;
+    --orange: #c46030;
+    --orange-bg: #361808;
+    --orange-text: #f09060;
+    --red: #b03030;
+    --red-bg: #300808;
+    --red-text: #f08080;
+    --darkred-bg: #200404;
+    --darkred-text: #e06060;
+    --muted-bg: #18181f;
+    --muted-text: #443e5a;
+    --gap-open: #4a9e6a;
+    --gap-closed: #3a3650;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+    min-height: 100vh;
+    padding: 20px 12px 40px;
+  }
+  h1 { font-size: 18px; font-weight: 500; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+  .mode-btns { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mbtn {
+    padding: 6px 16px; font-size: 13px; border-radius: var(--radius);
+    border: 1px solid var(--border2); background: var(--bg2);
+    color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .mbtn:hover { border-color: var(--purple); color: var(--text); }
+  .mbtn.active { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
+  .stitle { font-size: 12px; font-weight: 500; color: var(--text2); margin: 14px 0 8px; letter-spacing: 0.04em; }
+  .domain-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .dbtn {
+    padding: 5px 12px; font-size: 12px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--bg2);
+    color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .dbtn:hover { border-color: var(--purple); color: var(--text); }
+  .dbtn.active { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { border-collapse: collapse; width: 100%; font-size: 11px; }
+  th {
+    font-size: 11px; font-weight: 500; color: var(--text2);
+    padding: 8px 2px; text-align: center; background: var(--bg3);
+    position: sticky; top: 0; z-index: 1;
+  }
+  td { padding: 2px; text-align: center; }
+  .row-num { font-size: 10px; color: var(--text3); padding: 0 6px; white-space: nowrap; }
+  .sc {
+    height: 34px; border-radius: 4px; border: 1px solid var(--border);
+    cursor: pointer; font-size: 10px; color: var(--text2); background: var(--bg2);
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 100%; transition: all 0.12s; line-height: 1.3; min-width: 44px;
+  }
+  .sc:hover { border-color: var(--border2); color: var(--text); background: var(--bg3); }
+  .sc.sel-dom  { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
+  .sc.sel-free { background: var(--blue-bg);   border-color: var(--blue);   color: var(--blue-text); }
+  .d5  { background: var(--green-bg);   border-color: var(--green);  color: var(--green-text); }
+  .d7  { background: var(--amber-bg);   border-color: var(--amber);  color: var(--amber-text); }
+  .d8  { background: var(--orange-bg);  border-color: var(--orange); color: var(--orange-text); }
+  .d9  { background: var(--red-bg);     border-color: var(--red);    color: var(--red-text); }
+  .dhi { background: var(--darkred-bg); border-color: var(--red);    color: var(--darkred-text); }
+  .dx  { background: var(--muted-bg);   border-color: var(--bg3);    color: var(--muted-text); }
+  .tvl { font-size: 9px; opacity: 0.8; }
+  .gap-cell { width: 10px; padding: 0 2px; }
+  .gap-bar { width: 5px; height: 34px; border-radius: 3px; margin: auto; transition: background 0.2s; }
+  .gap-open   { background: var(--gap-open); opacity: 0.6; }
+  .gap-closed { background: var(--gap-closed); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .li { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .ld { width: 12px; height: 12px; border-radius: 3px; border: 1px solid; flex-shrink: 0; }
+  .gap-sample { width: 5px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+  .stats-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 16px; flex: 1; min-width: 80px;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 2px; }
+  .stat-val { font-size: 22px; font-weight: 500; }
+  .count-info { font-size: 12px; color: var(--text2); margin-top: 10px; }
+  .go-btn {
+    margin-top: 14px; padding: 8px 20px; font-size: 13px;
+    border-radius: var(--radius); border: 1px solid var(--purple);
+    background: var(--purple-bg); color: var(--purple-text);
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .go-btn:hover { background: var(--purple); color: #fff; }
+  .warn { color: #c46030; }
+  .good { color: #4a9e6a; }
+</style>
+</head>
+<body>
+<h1>マギカロギア 特技判定ツール</h1>
+<p class="subtitle">領域と特技を設定して、各特技への目標値分布を確認できます</p>
+
+<div class="mode-btns">
+  <button class="mbtn active" id="btn-edit" onclick="setMode('edit')">特技を設定</button>
+  <button class="mbtn" id="btn-dist" onclick="setMode('dist')">目標値分布</button>
+</div>
+
+<div id="panel-edit">
+  <div class="stitle">領域を選択（1つ）— 両隣ギャップの距離が0になる／再クリックで解除</div>
+  <div class="domain-btns" id="domain-btns"></div>
+  <div class="stitle">特技を選択（領域内2つ＋自由3つ＝計5つ）</div>
+  <div class="table-wrap"><table id="tbl-edit"></table></div>
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:#2a2348;border-color:#7c6ee8;"></div>領域内の選択</div>
+    <div class="li"><div class="ld" style="background:#1a2e48;border-color:#4a8fd4;"></div>自由枠の選択</div>
+    <div class="li"><div class="gap-sample" style="background:#4a9e6a;opacity:0.6;"></div>開放ギャップ（距離0）</div>
+    <div class="li"><div class="gap-sample" style="background:#3a3650;"></div>通常ギャップ（距離+1）</div>
+  </div>
+  <div class="count-info" id="count-info"></div>
+  <button class="go-btn" onclick="setMode('dist')">目標値分布を確認 →</button>
+</div>
+
+<div id="panel-dist" style="display:none;">
+  <div class="stats-row" id="stats-row"></div>
+  <div class="table-wrap"><table id="tbl-dist"></table></div>
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:#1a3028;border-color:#4a9e6a;"></div>5〜6</div>
+    <div class="li"><div class="ld" style="background:#362010;border-color:#c4882a;"></div>7</div>
+    <div class="li"><div class="ld" style="background:#361808;border-color:#c46030;"></div>8</div>
+    <div class="li"><div class="ld" style="background:#300808;border-color:#b03030;"></div>9</div>
+    <div class="li"><div class="ld" style="background:#200404;border-color:#b03030;"></div>10以上</div>
+    <div class="li"><div class="ld" style="background:#18181f;border-color:#22222e;"></div>到達不可</div>
+  </div>
+  <button class="go-btn" style="margin-top:14px;" onclick="setMode('edit')">← 特技を変更</button>
+</div>
+
+<script>
+const COLS=[
+  {name:'1/星',s:['黄金','大地','森','道','海','静寂','雨','嵐','太陽','天空','異界']},
+  {name:'2/獣',s:['肉','蟲','花','血','鱗','混沌','牙','叫び','怒り','翼','エロス']},
+  {name:'3/力',s:['重力','風','流れ','水','波','自由','衝撃','雷','炎','光','円環']},
+  {name:'4/歌',s:['物語','旋律','涙','別れ','微笑み','想い','勝利','恋','情熱','癒し','時']},
+  {name:'5/夢',s:['追憶','謎','嘘','不安','眠り','偶然','幻','狂気','祈り','希望','未来']},
+  {name:'6/闇',s:['深淵','勇敢','裏切り','迷い','忘情','怠惰','不幸','バカ','悪意','絶望','死']},
+];
+const NR=11, NC=6;
+let domain=null;
+let picked=new Set();
+
+function isGapOpen(leftCol){
+  if(domain===null) return false;
+  // 星(0): 右ギャップ(星↔獣, leftCol=0)と左ギャップ(闇↔星, leftCol=5)
+  if(domain===0) return leftCol===0 || leftCol===5;
+  // 闇(5): 左ギャップ(夢↔闇, leftCol=4)のみ
+  if(domain===NC-1) return leftCol===domain-1;
+  // その他: 両隣
+  return leftCol===domain-1 || leftCol===domain;
+}
+
+function bfsDist(sc,sr,tc,tr){
+  if(sc===tc && sr===tr) return 0;
+  const dist=new Map();
+  dist.set(`${sc},${sr}`,0);
+  const q=[[sc,sr,0]];
+  while(q.length){
+    q.sort((a,b)=>a[2]-b[2]);
+    const [c,r,d]=q.shift();
+    const cur=dist.get(`${c},${r}`);
+    if(cur!==undefined && d>cur) continue;
+    const nb=[];
+    if(r>0)      nb.push([c,r-1,d+1]);
+    if(r<NR-1)   nb.push([c,r+1,d+1]);
+    if(c>0)    { const cost=isGapOpen(c-1)?1:2; nb.push([c-1,r,d+cost]); }
+    if(c<NC-1) { const cost=isGapOpen(c)  ?1:2; nb.push([c+1,r,d+cost]); }
+    for(const [nc,nr,nd] of nb){
+      const k=`${nc},${nr}`;
+      const prev=dist.get(k);
+      if(prev!==undefined && prev<=nd) continue;
+      dist.set(k,nd);
+      q.push([nc,nr,nd]);
+    }
+  }
+  const res=dist.get(`${tc},${tr}`);
+  return res!==undefined ? res : 99;
+}
+
+function calcMin(tc,tr){
+  if(picked.size===0) return 99;
+  let best=99;
+  for(const k of picked){
+    const [sc,sr]=k.split(',').map(Number);
+    const d=bfsDist(sc,sr,tc,tr);
+    if(d<best) best=d;
+  }
+  return best;
+}
+
+function tvClass(d){
+  if(d===99) return 'dx';
+  const tv=5+d;
+  if(tv<=6)  return 'd5';
+  if(tv===7) return 'd7';
+  if(tv===8) return 'd8';
+  if(tv===9) return 'd9';
+  return 'dhi';
+}
+
+function buildDomainBtns(){
+  const el=document.getElementById('domain-btns');
+  el.innerHTML='';
+  COLS.forEach((col,i)=>{
+    const b=document.createElement('button');
+    b.textContent=col.name;
+    b.className='dbtn'+(domain===i?' active':'');
+    b.onclick=()=>{
+      domain = domain===i ? null : i;
+      buildDomainBtns();
+      buildTable('tbl-edit',false);
+      updateCount();
+    };
+    el.appendChild(b);
+  });
+}
+
+function domCount(){
+  if(domain===null) return 0;
+  return [...picked].filter(k=>parseInt(k.split(',')[0])===domain).length;
+}
+function freeCount(){ return picked.size - domCount(); }
+
+function buildTable(id, distMode){
+  const tbl=document.getElementById(id);
+  let h='<thead><tr><th></th>';
+  COLS.forEach(col=>{ h+=`<th>${col.name}</th><th class="gap-cell"></th>`; });
+  h+='</tr></thead><tbody>';
+  let cnt5=0, cnt9=0, cnt10=0;
+  for(let r=0;r<NR;r++){
+    h+=`<tr><td class="row-num">${r+1}</td>`;
+    COLS.forEach((col,ci)=>{
+      if(distMode){
+        const d=calcMin(ci,r);
+        const tv=d===99?'×':5+d;
+        const cls=tvClass(d);
+        if(d!==99 && 5+d<=6)  cnt5++;
+        if(d!==99 && 5+d===9) cnt9++;
+        if(d!==99 && 5+d>=10) cnt10++;
+        h+=`<td><div class="sc ${cls}">${col.s[r]}<span class="tvl">${tv}</span></div></td>`;
+      } else {
+        const key=`${ci},${r}`;
+        const isSel=picked.has(key);
+        const cls=isSel ? (domain!==null && ci===domain ? 'sel-dom' : 'sel-free') : '';
+        h+=`<td><div class="sc ${cls}" onclick="toggleSkill(${ci},${r})">${col.s[r]}</div></td>`;
+      }
+      if(ci<NC-1){
+        const open=isGapOpen(ci);
+        h+=`<td class="gap-cell"><div class="gap-bar ${open?'gap-open':'gap-closed'}"></div></td>`;
+      } else {
+        h+='<td class="gap-cell"></td>';
+      }
+    });
+    h+='</tr>';
+  }
+  h+='</tbody>';
+  tbl.innerHTML=h;
+  if(distMode){
+    document.getElementById('stats-row').innerHTML=`
+      <div class="stat-card"><div class="stat-label">目標値5〜6</div><div class="stat-val good">${cnt5}</div></div>
+      <div class="stat-card"><div class="stat-label">目標値9</div><div class="stat-val ${cnt9>0?'warn':'good'}">${cnt9}</div></div>
+      <div class="stat-card"><div class="stat-label">目標値10以上</div><div class="stat-val ${cnt10>0?'warn':'good'}">${cnt10}</div></div>
+    `;
+  }
+}
+
+function toggleSkill(c,r){
+  const key=`${c},${r}`;
+  if(picked.has(key)){
+    picked.delete(key);
+  } else {
+    const inDom = domain!==null && c===domain;
+    if(inDom  && domCount()>=2) return;
+    if(!inDom && freeCount()>=3) return;
+    picked.add(key);
+  }
+  buildTable('tbl-edit',false);
+  updateCount();
+}
+
+function updateCount(){
+  const dc=domCount(), fc=freeCount();
+  document.getElementById('count-info').textContent =
+    domain===null
+      ? `選択中: ${picked.size} / 5（領域未選択）`
+      : `選択中: ${picked.size} / 5（領域内 ${dc} / 2、自由 ${fc} / 3）`;
+}
+
+function setMode(m){
+  document.getElementById('panel-edit').style.display = m==='edit' ? '' : 'none';
+  document.getElementById('panel-dist').style.display = m==='dist' ? '' : 'none';
+  document.getElementById('btn-edit').className = 'mbtn'+(m==='edit'?' active':'');
+  document.getElementById('btn-dist').className = 'mbtn'+(m==='dist'?' active':'');
+  if(m==='dist') buildTable('tbl-dist',true);
+}
+
+buildDomainBtns();
+buildTable('tbl-edit',false);
+updateCount();
+</script>
+</body>
+</html>
