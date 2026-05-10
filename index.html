@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>マギカロギア 特技判定ツール</title>
+<title>マギカロギア 特技判定ツール β版</title>
 <style>
   :root {
     --bg: #0f0f13;
@@ -48,17 +48,27 @@
     min-height: 100vh;
     padding: 20px 12px 40px;
   }
-  h1 { font-size: 18px; font-weight: 500; letter-spacing: 0.05em; margin-bottom: 4px; }
+  h1 {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
   .subtitle { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
   .mode-btns { display: flex; gap: 8px; margin-bottom: 16px; }
   .mbtn {
     padding: 6px 16px; font-size: 13px; border-radius: var(--radius);
     border: 1px solid var(--border2); background: var(--bg2);
-    color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: inherit;
+    color: var(--text2); cursor: pointer; transition: all 0.15s;
+    font-family: inherit;
   }
   .mbtn:hover { border-color: var(--purple); color: var(--text); }
   .mbtn.active { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
-  .stitle { font-size: 12px; font-weight: 500; color: var(--text2); margin: 14px 0 8px; letter-spacing: 0.04em; }
+  .stitle {
+    font-size: 12px; font-weight: 500; color: var(--text2);
+    margin: 14px 0 8px; letter-spacing: 0.04em;
+  }
   .domain-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
   .dbtn {
     padding: 5px 12px; font-size: 12px; border-radius: var(--radius);
@@ -78,13 +88,16 @@
   .row-num { font-size: 10px; color: var(--text3); padding: 0 6px; white-space: nowrap; }
   .sc {
     height: 34px; border-radius: 4px; border: 1px solid var(--border);
-    cursor: pointer; font-size: 10px; color: var(--text2); background: var(--bg2);
-    display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 100%; transition: all 0.12s; line-height: 1.3; min-width: 44px;
+    cursor: pointer; font-size: 10px; color: var(--text2);
+    background: var(--bg2);
+    display: inline-flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 100%; transition: all 0.12s; line-height: 1.3;
+    min-width: 44px;
   }
   .sc:hover { border-color: var(--border2); color: var(--text); background: var(--bg3); }
-  .sc.sel-dom  { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
-  .sc.sel-free { background: var(--blue-bg);   border-color: var(--blue);   color: var(--blue-text); }
+  .sc.sel-dom { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
+  .sc.sel-free { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); }
   .d5  { background: var(--green-bg);   border-color: var(--green);  color: var(--green-text); }
   .d7  { background: var(--amber-bg);   border-color: var(--amber);  color: var(--amber-text); }
   .d8  { background: var(--orange-bg);  border-color: var(--orange); color: var(--orange-text); }
@@ -121,7 +134,8 @@
 </head>
 <body>
 <h1>マギカロギア 特技判定ツール</h1>
-<p class="subtitle">領域と特技を設定して、各特技への目標値分布を確認できます</p>
+<p class="subtitle">魔道書大戦RPGマギカロギアの領域、特技を選ぶと、指定された特技に対する目標値の分布が確認できます。</p>
+<p class="subtitle">※万が一権利者さまより問題報告があった際は取り下げます</p>
 
 <div class="mode-btns">
   <button class="mbtn active" id="btn-edit" onclick="setMode('edit')">特技を設定</button>
@@ -129,7 +143,7 @@
 </div>
 
 <div id="panel-edit">
-  <div class="stitle">領域を選択（1つ）— 両隣ギャップの距離が0になる／再クリックで解除</div>
+  <div class="stitle">領域を選択（1つ）— 両隣ギャップの距離が0になる</div>
   <div class="domain-btns" id="domain-btns"></div>
   <div class="stitle">特技を選択（領域内2つ＋自由3つ＝計5つ）</div>
   <div class="table-wrap"><table id="tbl-edit"></table></div>
@@ -166,66 +180,62 @@ const COLS=[
   {name:'5/夢',s:['追憶','謎','嘘','不安','眠り','偶然','幻','狂気','祈り','希望','未来']},
   {name:'6/闇',s:['深淵','勇敢','裏切り','迷い','忘情','怠惰','不幸','バカ','悪意','絶望','死']},
 ];
-const NR=11, NC=6;
-let domain=null;
+const NR=11,NC=6;
+let domain=1;
 let picked=new Set();
 
 function isGapOpen(leftCol){
-  if(domain===null) return false;
-  // 星(0): 右ギャップ(星↔獣, leftCol=0)と左ギャップ(闇↔星, leftCol=5)
-  if(domain===0) return leftCol===0 || leftCol===5;
-  // 闇(5): 左ギャップ(夢↔闇, leftCol=4)のみ
-  if(domain===NC-1) return leftCol===domain-1;
-  // その他: 両隣
-  return leftCol===domain-1 || leftCol===domain;
+  if(domain===null)return false;
+  if(domain===0)return leftCol===NC-1;
+  if(domain===NC-1)return leftCol===domain-1;
+  return leftCol===domain-1||leftCol===domain;
 }
 
 function bfsDist(sc,sr,tc,tr){
-  if(sc===tc && sr===tr) return 0;
-  const dist=new Map();
-  dist.set(`${sc},${sr}`,0);
+  if(sc===tc&&sr===tr)return 0;
+  const vis=new Map();
+  vis.set(`${sc},${sr}`,0);
   const q=[[sc,sr,0]];
   while(q.length){
     q.sort((a,b)=>a[2]-b[2]);
-    const [c,r,d]=q.shift();
-    const cur=dist.get(`${c},${r}`);
-    if(cur!==undefined && d>cur) continue;
+    const[c,r,d]=q.shift();
     const nb=[];
-    if(r>0)      nb.push([c,r-1,d+1]);
-    if(r<NR-1)   nb.push([c,r+1,d+1]);
-    if(c>0)    { const cost=isGapOpen(c-1)?1:2; nb.push([c-1,r,d+cost]); }
-    if(c<NC-1) { const cost=isGapOpen(c)  ?1:2; nb.push([c+1,r,d+cost]); }
-    for(const [nc,nr,nd] of nb){
+    if(r>0)nb.push([c,r-1,d+1]);
+    if(r<NR-1)nb.push([c,r+1,d+1]);
+    if(c>0){const cost=isGapOpen(c-1)?1:2;nb.push([c-1,r,d+cost]);}
+    if(c<NC-1){const cost=isGapOpen(c)?1:2;nb.push([c+1,r,d+cost]);}
+    for(const[nc,nr,nd]of nb){
       const k=`${nc},${nr}`;
-      const prev=dist.get(k);
-      if(prev!==undefined && prev<=nd) continue;
-      dist.set(k,nd);
+      const prev=vis.get(k);
+      if(prev!==undefined&&prev<=nd)continue;
+      vis.set(k,nd);
+      if(nc===tc&&nr===tr)continue;
       q.push([nc,nr,nd]);
     }
   }
-  const res=dist.get(`${tc},${tr}`);
-  return res!==undefined ? res : 99;
+  const res=vis.get(`${tc},${tr}`);
+  return res!==undefined?res:99;
 }
 
 function calcMin(tc,tr){
-  if(picked.size===0) return 99;
+  if(picked.size===0)return 99;
   let best=99;
   for(const k of picked){
-    const [sc,sr]=k.split(',').map(Number);
+    const[sc,sr]=k.split(',').map(Number);
     const d=bfsDist(sc,sr,tc,tr);
-    if(d<best) best=d;
+    if(d<best)best=d;
   }
   return best;
 }
 
 function tvClass(d){
-  if(d===99) return 'dx';
+  if(d===99)return'dx';
   const tv=5+d;
-  if(tv<=6)  return 'd5';
-  if(tv===7) return 'd7';
-  if(tv===8) return 'd8';
-  if(tv===9) return 'd9';
-  return 'dhi';
+  if(tv<=6)return'd5';
+  if(tv===7)return'd7';
+  if(tv===8)return'd8';
+  if(tv===9)return'd9';
+  return'dhi';
 }
 
 function buildDomainBtns(){
@@ -235,28 +245,20 @@ function buildDomainBtns(){
     const b=document.createElement('button');
     b.textContent=col.name;
     b.className='dbtn'+(domain===i?' active':'');
-    b.onclick=()=>{
-      domain = domain===i ? null : i;
-      buildDomainBtns();
-      buildTable('tbl-edit',false);
-      updateCount();
-    };
+    b.onclick=()=>{domain=i;buildDomainBtns();buildTable('tbl-edit',false);updateCount();};
     el.appendChild(b);
   });
 }
 
-function domCount(){
-  if(domain===null) return 0;
-  return [...picked].filter(k=>parseInt(k.split(',')[0])===domain).length;
-}
-function freeCount(){ return picked.size - domCount(); }
+function domCount(){return[...picked].filter(k=>parseInt(k.split(',')[0])===domain).length;}
+function freeCount(){return picked.size-domCount();}
 
-function buildTable(id, distMode){
+function buildTable(id,distMode){
   const tbl=document.getElementById(id);
   let h='<thead><tr><th></th>';
-  COLS.forEach(col=>{ h+=`<th>${col.name}</th><th class="gap-cell"></th>`; });
+  COLS.forEach(col=>{h+=`<th>${col.name}</th><th class="gap-cell"></th>`;});
   h+='</tr></thead><tbody>';
-  let cnt5=0, cnt9=0, cnt10=0;
+  let cnt5=0,cnt9=0,cnt10=0;
   for(let r=0;r<NR;r++){
     h+=`<tr><td class="row-num">${r+1}</td>`;
     COLS.forEach((col,ci)=>{
@@ -264,20 +266,20 @@ function buildTable(id, distMode){
         const d=calcMin(ci,r);
         const tv=d===99?'×':5+d;
         const cls=tvClass(d);
-        if(d!==99 && 5+d<=6)  cnt5++;
-        if(d!==99 && 5+d===9) cnt9++;
-        if(d!==99 && 5+d>=10) cnt10++;
+        if(d!==99&&5+d<=6)cnt5++;
+        if(d!==99&&5+d===9)cnt9++;
+        if(d!==99&&5+d>=10)cnt10++;
         h+=`<td><div class="sc ${cls}">${col.s[r]}<span class="tvl">${tv}</span></div></td>`;
-      } else {
+      }else{
         const key=`${ci},${r}`;
         const isSel=picked.has(key);
-        const cls=isSel ? (domain!==null && ci===domain ? 'sel-dom' : 'sel-free') : '';
+        const cls=isSel?(ci===domain?'sel-dom':'sel-free'):'';
         h+=`<td><div class="sc ${cls}" onclick="toggleSkill(${ci},${r})">${col.s[r]}</div></td>`;
       }
       if(ci<NC-1){
         const open=isGapOpen(ci);
         h+=`<td class="gap-cell"><div class="gap-bar ${open?'gap-open':'gap-closed'}"></div></td>`;
-      } else {
+      }else{
         h+='<td class="gap-cell"></td>';
       }
     });
@@ -286,22 +288,24 @@ function buildTable(id, distMode){
   h+='</tbody>';
   tbl.innerHTML=h;
   if(distMode){
-    document.getElementById('stats-row').innerHTML=`
+    const s=document.getElementById('stats-row');
+    const c9col=cnt9>0?'warn':'good';
+    const c10col=cnt10>0?'warn':'good';
+    s.innerHTML=`
       <div class="stat-card"><div class="stat-label">目標値5〜6</div><div class="stat-val good">${cnt5}</div></div>
-      <div class="stat-card"><div class="stat-label">目標値9</div><div class="stat-val ${cnt9>0?'warn':'good'}">${cnt9}</div></div>
-      <div class="stat-card"><div class="stat-label">目標値10以上</div><div class="stat-val ${cnt10>0?'warn':'good'}">${cnt10}</div></div>
+      <div class="stat-card"><div class="stat-label">目標値9</div><div class="stat-val ${c9col}">${cnt9}</div></div>
+      <div class="stat-card"><div class="stat-label">目標値10以上</div><div class="stat-val ${c10col}">${cnt10}</div></div>
     `;
   }
 }
 
 function toggleSkill(c,r){
   const key=`${c},${r}`;
-  if(picked.has(key)){
-    picked.delete(key);
-  } else {
-    const inDom = domain!==null && c===domain;
-    if(inDom  && domCount()>=2) return;
-    if(!inDom && freeCount()>=3) return;
+  if(picked.has(key)){picked.delete(key);}
+  else{
+    const inDom=c===domain;
+    if(inDom&&domCount()>=2)return;
+    if(!inDom&&freeCount()>=3)return;
     picked.add(key);
   }
   buildTable('tbl-edit',false);
@@ -309,19 +313,17 @@ function toggleSkill(c,r){
 }
 
 function updateCount(){
-  const dc=domCount(), fc=freeCount();
-  document.getElementById('count-info').textContent =
-    domain===null
-      ? `選択中: ${picked.size} / 5（領域未選択）`
-      : `選択中: ${picked.size} / 5（領域内 ${dc} / 2、自由 ${fc} / 3）`;
+  const dc=domCount(),fc=freeCount();
+  document.getElementById('count-info').textContent=
+    `選択中: ${picked.size} / 5（領域内 ${dc} / 2、自由 ${fc} / 3）`;
 }
 
 function setMode(m){
-  document.getElementById('panel-edit').style.display = m==='edit' ? '' : 'none';
-  document.getElementById('panel-dist').style.display = m==='dist' ? '' : 'none';
-  document.getElementById('btn-edit').className = 'mbtn'+(m==='edit'?' active':'');
-  document.getElementById('btn-dist').className = 'mbtn'+(m==='dist'?' active':'');
-  if(m==='dist') buildTable('tbl-dist',true);
+  document.getElementById('panel-edit').style.display=m==='edit'?'':'none';
+  document.getElementById('panel-dist').style.display=m==='dist'?'':'none';
+  document.getElementById('btn-edit').className='mbtn'+(m==='edit'?' active':'');
+  document.getElementById('btn-dist').className='mbtn'+(m==='dist'?' active':'');
+  if(m==='dist')buildTable('tbl-dist',true);
 }
 
 buildDomainBtns();
