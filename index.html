@@ -115,6 +115,9 @@
     cursor: pointer; font-family: inherit; transition: all 0.15s;
   }
   .go-btn:hover { background: var(--purple); color: #fff; }
+  .wrap-opt { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer; margin: 4px 0 6px; }
+  .wrap-opt input { accent-color: var(--purple); width: 16px; height: 16px; cursor: pointer; }
+  .wrap-note { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
   .warn { color: #c46030; }
   .good { color: #4a9e6a; }
 </style>
@@ -132,6 +135,11 @@
 <div id="panel-edit">
   <div class="stitle">領域を選択（1つ）— 両隣ギャップの距離が0になる／再クリックで解除</div>
   <div class="domain-btns" id="domain-btns"></div>
+  <label class="wrap-opt">
+    <input type="checkbox" id="chk-wrap" onchange="setWrap(this.checked)">
+    書工の「翻訳」を装備（星と闇の分野がつながる）
+  </label>
+  <div class="wrap-note" id="wrap-note" style="display:none;">表右端のギャップが闇↔星の接続です。通常は距離+1、領域が星または闇なら距離0になります。</div>
   <div class="stitle">特技を選択（領域内2つ＋自由3つ＝計5つ）</div>
   <div class="table-wrap"><table id="tbl-edit"></table></div>
   <div class="legend">
@@ -170,15 +178,24 @@ const COLS=[
 const NR=11, NC=6;
 let domain=null;
 let picked=new Set();
+let wrap=false; // 書工の翻訳: 星と闇が接続される
 
+// leftCol=5 は「闇↔星」の環状ギャップ（wrap有効時のみ存在）
 function isGapOpen(leftCol){
   if(domain===null) return false;
-  // 星(0): 右ギャップ(星↔獣, leftCol=0)と左ギャップ(闇↔星, leftCol=5)
-  if(domain===0) return leftCol===0 || leftCol===5;
-  // 闇(5): 左ギャップ(夢↔闇, leftCol=4)のみ
-  if(domain===NC-1) return leftCol===domain-1;
+  // 星(0): 右ギャップ(星↔獣)。wrap時は左ギャップ(闇↔星)も
+  if(domain===0) return leftCol===0 || (wrap && leftCol===NC-1);
+  // 闇(5): 左ギャップ(夢↔闇)。wrap時は右ギャップ(闇↔星)も
+  if(domain===NC-1) return leftCol===domain-1 || (wrap && leftCol===NC-1);
   // その他: 両隣
   return leftCol===domain-1 || leftCol===domain;
+}
+
+function setWrap(v){
+  wrap=v;
+  document.getElementById('wrap-note').style.display = wrap ? '' : 'none';
+  buildTable('tbl-edit',false);
+  if(document.getElementById('panel-dist').style.display!=='none') buildTable('tbl-dist',true);
 }
 
 function bfsDist(sc,sr,tc,tr){
@@ -196,6 +213,9 @@ function bfsDist(sc,sr,tc,tr){
     if(r<NR-1)   nb.push([c,r+1,d+1]);
     if(c>0)    { const cost=isGapOpen(c-1)?1:2; nb.push([c-1,r,d+cost]); }
     if(c<NC-1) { const cost=isGapOpen(c)  ?1:2; nb.push([c+1,r,d+cost]); }
+    // 書工の翻訳: 星(0)と闇(5)を接続
+    if(wrap && c===0)    { const cost=isGapOpen(NC-1)?1:2; nb.push([NC-1,r,d+cost]); }
+    if(wrap && c===NC-1) { const cost=isGapOpen(NC-1)?1:2; nb.push([0,r,d+cost]); }
     for(const [nc,nr,nd] of nb){
       const k=`${nc},${nr}`;
       const prev=dist.get(k);
@@ -278,6 +298,9 @@ function buildTable(id, distMode){
       if(ci<NC-1){
         const open=isGapOpen(ci);
         h+=`<td class="gap-cell"><div class="gap-bar ${open?'gap-open':'gap-closed'}"></div></td>`;
+      } else if(wrap){
+        const open=isGapOpen(NC-1);
+        h+=`<td class="gap-cell"><div class="gap-bar ${open?'gap-open':'gap-closed'}" title="闇↔星（書工の翻訳）"></div></td>`;
       } else {
         h+='<td class="gap-cell"></td>';
       }
